@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KTM Momo Rankings — Reddit Powered</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0a08;
+    --surface: #1a1109;
+    --card: #201508;
+    --orange: #e8651a;
+    --orange-light: #f5954a;
+    --cream: #f5ead8;
+    --muted: #8a7060;
+    --gold: #c9933a;
+    --green: #3a9e6a;
+    --red: #d94f3a;
+    --blue: #4a7fcb;
+    --border: #3a2515;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* === BACKGROUND TEXTURE === */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(232,101,26,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(201,147,58,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* === STEAM ANIMATION === */
+  @keyframes steam {
+    0%   { transform: translateY(0) scaleX(1); opacity: 0.6; }
+    50%  { transform: translateY(-18px) scaleX(1.3); opacity: 0.3; }
+    100% { transform: translateY(-36px) scaleX(0.8); opacity: 0; }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  /* === HEADER === */
+  header {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 60px 20px 40px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .steam-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    height: 40px;
+    align-items: flex-end;
+  }
+
+  .steam {
+    width: 4px;
+    height: 28px;
+    background: linear-gradient(to top, var(--orange-light), transparent);
+    border-radius: 4px;
+    animation: steam 2.2s ease-in-out infinite;
+  }
+  .steam:nth-child(2) { animation-delay: 0.4s; height: 20px; }
+  .steam:nth-child(3) { animation-delay: 0.8s; height: 32px; }
+  .steam:nth-child(4) { animation-delay: 0.2s; height: 18px; }
+  .steam:nth-child(5) { animation-delay: 1.0s; height: 26px; }
+
+  .momo-icon {
+    font-size: 52px;
+    display: block;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 0 20px rgba(232,101,26,0.5));
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 900;
+    line-height: 1.1;
+    background: linear-gradient(135deg, var(--cream) 0%, var(--gold) 50%, var(--orange) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-top: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(58, 158, 106, 0.12);
+    border: 1px solid rgba(58,158,106,0.35);
+    color: var(--green);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 100px;
+    margin-top: 14px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  /* === STATS BAR === */
+  .stats-bar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+    padding: 0 32px;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--orange);
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* === FILTERS === */
+  .filters {
+    position: relative;
+    z-index: 2;
+    padding: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .filter-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 16px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .filter-btn:hover,
+  .filter-btn.active {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #fff;
+  }
+
+  /* === SEARCH === */
+  .search-wrap {
+    position: relative;
+    z-index: 2;
+    padding: 16px 20px 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    max-width: 400px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--cream);
+    padding: 10px 18px 10px 42px;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-wrap input:focus { border-color: var(--orange); }
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  .search-icon {
+    position: absolute;
+    left: calc(50% - 200px + 14px);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  /* === LEADERBOARD === */
+  .leaderboard {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+    margin: 28px auto;
+    padding: 0 16px 60px;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-left: 4px;
+  }
+
+  /* === CARD === */
+  .momo-card {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    animation: fadeUp 0.5s ease forwards;
+    opacity: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .momo-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(232,101,26,0.04) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .momo-card:hover { transform: translateY(-2px); border-color: rgba(232,101,26,0.4); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .momo-card:hover::before { opacity: 1; }
+
+  .momo-card.top-3 { border-color: rgba(201,147,58,0.3); }
+  .momo-card.top-3 .rank-badge { background: linear-gradient(135deg, #b8860b, #e8a030); }
+
+  /* stagger animation */
+  .momo-card:nth-child(1)  { animation-delay: 0.05s; }
+  .momo-card:nth-child(2)  { animation-delay: 0.10s; }
+  .momo-card:nth-child(3)  { animation-delay: 0.15s; }
+  .momo-card:nth-child(4)  { animation-delay: 0.20s; }
+  .momo-card:nth-child(5)  { animation-delay: 0.25s; }
+  .momo-card:nth-child(6)  { animation-delay: 0.30s; }
+  .momo-card:nth-child(7)  { animation-delay: 0.35s; }
+  .momo-card:nth-child(8)  { animation-delay: 0.40s; }
+  .momo-card:nth-child(9)  { animation-delay: 0.45s; }
+  .momo-card:nth-child(10) { animation-delay: 0.50s; }
+
+  .rank-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .rank-badge {
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cream);
+  }
+
+  .medal { font-size: 1.4rem; line-height: 1; }
+
+  .info-col { padding: 0 16px; }
+
+  .place-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--cream);
+    line-height: 1.3;
+    margin-bottom: 5px;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .tag {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+  }
+
+  .tag-area {
+    background: rgba(74,127,203,0.12);
+    color: #7aadee;
+    border: 1px solid rgba(74,127,203,0.2);
+  }
+
+  .tag-type {
+    background: rgba(201,147,58,0.12);
+    color: #e8b84a;
+    border: 1px solid rgba(201,147,58,0.2);
+  }
+
+  .tag-sentiment {
+    font-size: 0.68rem;
+    color: var(--muted);
+  }
+
+  .trust {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    letter-spacing: 0.03em;
+  }
+
+  .trust-established { background: rgba(58,158,106,0.12); color: #5ecb8a; border: 1px solid rgba(58,158,106,0.25); }
+  .trust-popular     { background: rgba(217,79,58,0.12); color: #f0806a; border: 1px solid rgba(217,79,58,0.25); }
+  .trust-known       { background: rgba(74,127,203,0.12); color: #7aadee; border: 1px solid rgba(74,127,203,0.25); }
+  .trust-emerging    { background: rgba(140,100,200,0.12); color: #b490e8; border: 1px solid rgba(140,100,200,0.25); }
+
+  .score-col {
+    text-align: right;
+    min-width: 90px;
+  }
+
+  .score-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--orange);
+    display: block;
+    line-height: 1;
+  }
+
+  .score-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .mini-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+    justify-content: flex-end;
+  }
+
+  .mini-stat {
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .mini-stat span {
+    color: var(--cream);
+    font-weight: 600;
+  }
+
+  /* === SCORE BAR === */
+  .score-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .score-bar {
+    height: 100%;
+    background: linear-gradient(to right, var(--orange), var(--gold));
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* === QUOTE EXPAND === */
+  .quote-section {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid var(--orange);
+    border-radius: 0 8px 8px 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  .momo-card.expanded .quote-section { display: block; }
+
+  .gmaps-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--orange);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 8px;
+    letter-spacing: 0.04em;
+  }
+  .gmaps-link:hover { color: var(--orange-light); }
+
+  /* === FOOTER === */
+  footer {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 24px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  footer a { color: var(--orange); text-decoration: none; }
+
+  .no-results {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+    font-size: 1rem;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 580px) {
+    .momo-card { grid-template-columns: 44px 1fr auto; padding: 14px 14px; }
+    .score-num { font-size: 1.2rem; }
+    .place-name { font-size: 0.95rem; }
+    .stat { padding: 0 18px; }
+    .stat-num { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="steam-container">
+    <div class="steam"></div>
+    <div class="steam"></div>
+    <div class="steam"></div>
+    <div class="steam"></div>
+    <div class="steam"></div>
+  </div>
+  <span class="momo-icon">🥟</span>
+  <h1>KTM Momo Rankings</h1>
+  <p class="subtitle">Kathmandu's Best Momo — Ranked by Reddit</p>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    Reddit-Powered · r/Nepal &amp; r/NepalSocial
+  </div>
+</header>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat">
+    <span class="stat-num" id="statPlaces">—</span>
+    <span class="stat-label">Momo Spots</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num" id="statMentions">—</span>
+    <span class="stat-label">Total Mentions</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num" id="statThreads">—</span>
+    <span class="stat-label">Reddit Threads</span>
+  </div>
+  <div class="stat">
+    <span class="stat-num" id="statUpdated">—</span>
+    <span class="stat-label">Last Updated</span>
+  </div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="all">All Types</button>
+  <button class="filter-btn" data-filter="buff">🐃 Buff</button>
+  <button class="filter-btn" data-filter="pork">🐷 Pork</button>
+  <button class="filter-btn" data-filter="tibetan">🏔️ Tibetan</button>
+  <button class="filter-btn" data-filter="veg">🥬 Veg</button>
+  <button class="filter-btn" data-filter="established">⭐ Established</button>
+  <button class="filter-btn" data-filter="popular">🔥 Popular</button>
+</div>
+
+<div class="search-wrap">
+  <span class="search-icon">🔍</span>
+  <input type="text" id="searchInput" placeholder="Search by name or area…">
+</div>
+
+<div class="leaderboard" id="leaderboard">
+  <p class="section-label">Loading rankings…</p>
+</div>
+
+<footer>
+  Scores: <strong>Σ(upvotes + 1)</strong> per unique mention ·
+  Data from <a href="https://reddit.com/r/Nepal" target="_blank">r/Nepal</a> &amp;
+  <a href="https://reddit.com/r/NepalSocial" target="_blank">r/NepalSocial</a> ·
+  Re-run the scraper anytime to refresh
+</footer>
+
+<script>
+const RAW_DATA = [
+  { rank:1,  name:"Norling Restaurant",        area:"Kathmandu",                 type:"Multi",           score:1541, upvotes:1540, mentions:1,  threads:1,  avgUp:1540.0, trust:"Emerging",    sentiment:"—",              quote:"I had my very first momo in Nepal. Delicious. But I feel thristy I went for dinner at Norling Restaurant…", gmaps:"https://www.google.com/maps/search/Norling+Restaurant+Kathmandu+Nepal" },
+  { rank:2,  name:"Shandaar Momo",             area:"Sankhamul / Baneshwor",     type:"Buff, Veg",       score:351,  upvotes:332,  mentions:19, threads:12, avgUp:17.5,   trust:"Established", sentiment:"😍 Loved",       quote:"shandaar momo — Who owns this name/brand? Local momo pasal kholne bittikai shandar momo vanera banaucha…", gmaps:"https://www.google.com/maps/search/Shandaar+Momo+Sankhamul+Kathmandu+Nepal" },
+  { rank:3,  name:"Himalayan Momo",            area:"Kathmandu (Chain)",         type:"Frozen/Chain",    score:277,  upvotes:274,  mentions:3,  threads:3,  avgUp:91.3,   trust:"Known",       sentiment:"—",              quote:"Himalayan Momo now available at the following stores. Please try it. Need all the support and feedback…", gmaps:"https://www.google.com/maps/search/Himalayan+Momo+Nepal" },
+  { rank:4,  name:"Narayan Dai Momo",          area:"Gaushala",                  type:"Buff",            score:189,  upvotes:180,  mentions:9,  threads:9,  avgUp:20.0,   trust:"Established", sentiment:"🔥 Mixed",       quote:"Narayan dai ko MoMo is severely overhyped! Its fine but I feel like its way overpriced for pretty average momo…", gmaps:"https://www.google.com/maps/search/Narayan+Dai+Momo+Gaushala+Kathmandu+Nepal" },
+  { rank:5,  name:"Aambo Momo",                area:"Ason / Pulchowk",           type:"Buff, Fapar/Kodo",score:143,  upvotes:130,  mentions:13, threads:6,  avgUp:10.0,   trust:"Popular",     sentiment:"👍 Mostly Positive", quote:"Mahabharat momo in Patan Dhoka, lagankhel, Aambo momo, Shandar of Baneshewor, Mechung in Bouddha are all great…", gmaps:"https://www.google.com/maps/search/Aambo+Momo+Kathmandu+Nepal" },
+  { rank:6,  name:"New Food / Dish",           area:"New Road",                  type:"Pork",            score:89,   upvotes:84,   mentions:5,  threads:5,  avgUp:16.8,   trust:"Popular",     sentiment:"—",              quote:"Mostly for pork momo: New Food/Dish — New Road, Oriental — Baluwatar, Mero Ghar ko. Honorable mentions all around…", gmaps:"https://www.google.com/maps/search/New+Food+Momo+New+Road+Kathmandu+Nepal" },
+  { rank:7,  name:"Everest Momo — Kamaladi",  area:"Kamaladi",                  type:"Buff",            score:65,   upvotes:60,   mentions:5,  threads:4,  avgUp:12.0,   trust:"Known",       sentiment:"🔥 Mixed",       quote:"Jaba samma Kathmandu ma Everest Momo chha, momo ko kura garna sakinchhana…", gmaps:"https://www.google.com/maps/search/Everest+Momo+Kamaladi+Kathmandu+Nepal" },
+  { rank:8,  name:"Welcome Family Restaurant", area:"Shankhamul",                type:"Tibetan",         score:56,   upvotes:50,   mentions:6,  threads:4,  avgUp:8.3,    trust:"Known",       sentiment:"😍 Loved",       quote:"Welcome family restaurant has hands down the best Tibetan-style momo in Shankhamul area…", gmaps:"https://www.google.com/maps/search/Welcome+Family+Restaurant+Shankhamul+Kathmandu+Nepal" },
+  { rank:9,  name:"Mahabharat Momo",           area:"Lagankhel / Patan Dhoka",  type:"Buff",            score:53,   upvotes:48,   mentions:5,  threads:5,  avgUp:9.6,    trust:"Popular",     sentiment:"—",              quote:"Mahabharat momo in Patan Dhoka, lagankhel is a classic. Always consistent, never disappoints…", gmaps:"https://www.google.com/maps/search/Mahabharat+Momo+Lagankhel+Lalitpur+Nepal" },
+  { rank:10, name:"Tashi Delek Restaurant",    area:"Ekantakuna",               type:"Tibetan Buff",    score:42,   upvotes:35,   mentions:7,  threads:5,  avgUp:5.0,    trust:"Popular",     sentiment:"😍 Loved",       quote:"1. Aambo Momo 2. Magic Momo (Sinamangal) 3. Tashi Delek Tibetan Restaurant (Ekantakuna) — top tier all three…", gmaps:"https://www.google.com/maps/search/Tashi+Delek+Tibetan+Restaurant+Ekantakuna+Nepal" },
+  { rank:11, name:"Mechung",                   area:"Bouddha",                  type:"Tibetan",         score:40,   upvotes:37,   mentions:3,  threads:2,  avgUp:12.3,   trust:"Emerging",    sentiment:"⚠️ Debated",     quote:"Mechung in Bouddha is underrated. Authentic Tibetan flavors, solid broth, great atmosphere…", gmaps:"https://www.google.com/maps/search/Mechung+Restaurant+Bouddha+Kathmandu+Nepal" },
+  { rank:12, name:"Ram Momo — Maru",           area:"Maru / Kasthamandap",      type:"Buff",            score:39,   upvotes:36,   mentions:3,  threads:2,  avgUp:12.0,   trust:"Emerging",    sentiment:"—",              quote:"Ram momo at Maru, behind Kasthamandap — old school local spot, buff is perfectly spiced…", gmaps:"https://www.google.com/maps/search/Ram+Momo+Maru+Kasthamandap+Kathmandu+Nepal" },
+  { rank:13, name:"Try Again Momo Center",     area:"Kathmandu",                type:"Buff",            score:39,   upvotes:36,   mentions:3,  threads:2,  avgUp:12.0,   trust:"Emerging",    sentiment:"😍 Loved",       quote:"Try again momo center — good achar, consistent quality, worth the visit every time…", gmaps:"https://www.google.com/maps/search/Try+Again+Momo+Center+Kathmandu+Nepal" },
+  { rank:14, name:"Oriental Kitchen",          area:"Baluwatar",                type:"Pork",            score:34,   upvotes:33,   mentions:1,  threads:1,  avgUp:33.0,   trust:"Emerging",    sentiment:"—",              quote:"For pork momo — Oriental in Baluwatar is the top choice. Crispy fried option is fire…", gmaps:"https://www.google.com/maps/search/Oriental+Kitchen+Baluwatar+Kathmandu+Nepal" },
+  { rank:15, name:"Magic Momo",                area:"Sinamangal / Maharajgunj", type:"Buff, Jhol",      score:31,   upvotes:26,   mentions:5,  threads:3,  avgUp:5.2,    trust:"Known",       sentiment:"—",              quote:"Magic Momo Sinamangal — the jhol achar sets it apart. Spicy broth momo is a unique experience…", gmaps:"https://www.google.com/maps/search/Magic+Momo+Sinamangal+Kathmandu+Nepal" },
+  { rank:16, name:"Moti Didi Ko Momo",         area:"Sinamangal",               type:"Local",           score:23,   upvotes:22,   mentions:1,  threads:1,  avgUp:22.0,   trust:"Emerging",    sentiment:"😍 Loved",       quote:"Sinamangal hyundai ko showroom opposite moti didi ko momo — was the best local momo spot, always packed…", gmaps:"https://www.google.com/maps/search/Moti+Didi+Momo+Sinamangal+Kathmandu+Nepal" },
+];
+
+const maxScore = RAW_DATA[0].score;
+let currentFilter = 'all';
+let searchQuery = '';
+
+function getTrustClass(trust) {
+  if (trust.includes('Established')) return 'trust-established';
+  if (trust.includes('Popular'))     return 'trust-popular';
+  if (trust.includes('Known'))       return 'trust-known';
+  return 'trust-emerging';
+}
+
+function getTrustLabel(trust) {
+  if (trust.includes('Established')) return '⭐ Established';
+  if (trust.includes('Popular'))     return '🔥 Popular';
+  if (trust.includes('Known'))       return '👍 Known';
+  return '📌 Emerging';
+}
+
+function getMedalOrRank(rank) {
+  if (rank === 1) return '<span class="medal">🥇</span>';
+  if (rank === 2) return '<span class="medal">🥈</span>';
+  if (rank === 3) return '<span class="medal">🥉</span>';
+  return `<div class="rank-badge">${rank}</div>`;
+}
+
+function matchesFilter(item) {
+  if (currentFilter === 'all') return true;
+  if (currentFilter === 'buff')        return item.type.toLowerCase().includes('buff');
+  if (currentFilter === 'pork')        return item.type.toLowerCase().includes('pork');
+  if (currentFilter === 'tibetan')     return item.type.toLowerCase().includes('tibetan');
+  if (currentFilter === 'veg')         return item.type.toLowerCase().includes('veg');
+  if (currentFilter === 'established') return item.trust === 'Established';
+  if (currentFilter === 'popular')     return item.trust === 'Popular';
+  return true;
+}
+
+function matchesSearch(item) {
+  if (!searchQuery) return true;
+  const q = searchQuery.toLowerCase();
+  return item.name.toLowerCase().includes(q) || item.area.toLowerCase().includes(q) || item.type.toLowerCase().includes(q);
+}
+
+function renderCards() {
+  const list = document.getElementById('leaderboard');
+  const filtered = RAW_DATA.filter(d => matchesFilter(d) && matchesSearch(d));
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-results">🥟 No results found. Try a different filter!</div>';
+    return;
+  }
+
+  let html = `<p class="section-label">${filtered.length} spot${filtered.length !== 1 ? 's' : ''} · Ranked by Reddit Score</p>`;
+
+  filtered.forEach((item, i) => {
+    const pct = Math.round((item.score / maxScore) * 100);
+    const isTop3 = item.rank <= 3;
+    html += `
+    <div class="momo-card ${isTop3 ? 'top-3' : ''}" onclick="this.classList.toggle('expanded')" style="animation-delay:${i * 0.05}s">
+      <div class="rank-col">${getMedalOrRank(item.rank)}</div>
+      <div class="info-col">
+        <div class="place-name">${item.name}</div>
+        <div class="meta-row">
+          <span class="tag tag-area">📍 ${item.area}</span>
+          <span class="tag tag-type">${item.type}</span>
+          <span class="trust ${getTrustClass(item.trust)}">${getTrustLabel(item.trust)}</span>
+          ${item.sentiment !== '—' ? `<span class="tag-sentiment">${item.sentiment}</span>` : ''}
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="quote-section">
+          "${item.quote}"
+          <br>
+          <a class="gmaps-link" href="${item.gmaps}" target="_blank" onclick="event.stopPropagation()">📍 View on Google Maps ↗</a>
+        </div>
+      </div>
+      <div class="score-col">
+        <span class="score-num">${item.score.toLocaleString()}</span>
+        <span class="score-label">pts</span>
+        <div class="mini-stats">
+          <span class="mini-stat">💬 <span>${item.mentions}</span></span>
+          <span class="mini-stat">🧵 <span>${item.threads}</span></span>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  list.innerHTML = html;
+}
+
+function updateStats() {
+  const total = RAW_DATA.reduce((a,b) => a + b.mentions, 0);
+  const threads = RAW_DATA.reduce((a,b) => a + b.threads, 0);
+  document.getElementById('statPlaces').textContent = RAW_DATA.length;
+  document.getElementById('statMentions').textContent = total;
+  document.getElementById('statThreads').textContent = threads;
+  document.getElementById('statUpdated').textContent = 'Mar 2026';
+}
+
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderCards();
+  });
+});
+
+// Search
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderCards();
+});
+
+updateStats();
+renderCards();
+</script>
+</body>
+</html>
