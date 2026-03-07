@@ -1,0 +1,48 @@
+name: Auto Update Momo Rankings
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Runs every 6 hours
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install praw pandas openpyxl requests
+
+      - name: Run scraper
+        env:
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+        run: python nepal_momo_scraper_v3.py
+
+      - name: Update site HTML
+        run: python update_site.py
+
+      - name: Deploy to Netlify
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=. --prod
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Commit updated HTML
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add kathmandu_momo_rankings.html
+          git diff --staged --quiet || git commit -m "Auto-update momo rankings"
+          git push
