@@ -269,8 +269,8 @@
 
   /* === CARD === */
   .momo-card {
-    display: grid;
-    grid-template-columns: 56px 1fr auto;
+    display: flex;
+    flex-direction: column;
     align-items: center;
     gap: 0;
     background: var(--card);
@@ -313,6 +313,20 @@
   .momo-card:nth-child(9)  { animation-delay: 0.45s; }
   .momo-card:nth-child(10) { animation-delay: 0.50s; }
 
+  .card-main {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    cursor: pointer;
+  }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
   .rank-col {
     display: flex;
     flex-direction: column;
@@ -463,6 +477,17 @@
 
   .momo-card.expanded .quote-section { display: block; }
 
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  .expand-hint {
+    font-size: 0.65rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
   .gmaps-link {
     display: inline-flex;
     align-items: center;
@@ -475,6 +500,31 @@
     letter-spacing: 0.04em;
   }
   .gmaps-link:hover { color: var(--orange-light); }
+  .gmaps-btn {
+    background: rgba(232,101,26,0.12);
+    border: 1px solid rgba(232,101,26,0.35);
+    color: var(--orange);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 100px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.04em;
+    transition: all 0.2s;
+  }
+  .gmaps-btn:hover { background: var(--orange); color: #fff; }
+  .expand-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.72rem;
+    padding: 5px 12px;
+    border-radius: 100px;
+    cursor: pointer;
+    font-family: "DM Sans", sans-serif;
+  }
+  .expand-btn:hover { border-color: var(--orange); color: var(--orange); }
 
   /* === FOOTER === */
   footer {
@@ -647,32 +697,36 @@ function renderCards() {
     const pct = Math.round((item.score / maxScore) * 100);
     const isTop3 = item.rank <= 3;
     html += `
-    <div class="momo-card ${isTop3 ? 'top-3' : ''}" onclick="this.classList.toggle('expanded')" style="animation-delay:${i * 0.05}s">
-      <div class="rank-col">${getMedalOrRank(item.rank)}</div>
-      <div class="info-col">
-        <div class="place-name">${item.name}</div>
-        <div class="meta-row">
-          <span class="tag tag-area">📍 ${item.area}</span>
-          <span class="tag tag-type">${item.type}</span>
-          <span class="trust ${getTrustClass(item.trust)}">${getTrustLabel(item.trust)}</span>
-          ${item.sentiment !== '—' ? `<span class="tag-sentiment">${item.sentiment}</span>` : ''}
+    <div class="momo-card ${isTop3 ? 'top-3' : ''}" style="animation-delay:${i * 0.05}s">
+      <div class="card-main">
+        <div class="rank-col">${getMedalOrRank(item.rank)}</div>
+        <div class="info-col">
+          <div class="place-name">${item.name}</div>
+          <div class="meta-row">
+            <span class="tag tag-area">📍 ${item.area}</span>
+            <span class="tag tag-type">${item.type}</span>
+            <span class="trust ${getTrustClass(item.trust)}">${getTrustLabel(item.trust)}</span>
+            ${item.sentiment !== '—' ? `<span class="tag-sentiment">${item.sentiment}</span>` : ''}
+          </div>
+          <div class="score-bar-wrap">
+            <div class="score-bar" style="width:${pct}%"></div>
+          </div>
         </div>
-        <div class="score-bar-wrap">
-          <div class="score-bar" style="width:${pct}%"></div>
-        </div>
-        <div class="quote-section">
-          "${item.quote}"
-          <br>
-          <a class="gmaps-link" href="${item.gmaps}" target="_blank" onclick="event.stopPropagation()">📍 View on Google Maps ↗</a>
+        <div class="score-col">
+          <span class="score-num">${item.score.toLocaleString()}</span>
+          <span class="score-label">pts</span>
+          <div class="mini-stats">
+            <span class="mini-stat">💬 <span>${item.mentions}</span></span>
+            <span class="mini-stat">🧵 <span>${item.threads}</span></span>
+          </div>
         </div>
       </div>
-      <div class="score-col">
-        <span class="score-num">${item.score.toLocaleString()}</span>
-        <span class="score-label">pts</span>
-        <div class="mini-stats">
-          <span class="mini-stat">💬 <span>${item.mentions}</span></span>
-          <span class="mini-stat">🧵 <span>${item.threads}</span></span>
-        </div>
+      <div class="card-footer">
+        <button class="gmaps-btn" data-url="${item.gmaps}">📍 Google Maps ↗</button>
+        <button class="expand-btn" onclick="this.closest('.momo-card').classList.toggle('expanded')">quote ▾</button>
+      </div>
+      <div class="quote-section">
+        &ldquo;${item.quote}&rdquo;
       </div>
     </div>`;
   });
@@ -688,6 +742,17 @@ function updateStats() {
   document.getElementById('statThreads').textContent = threads;
   document.getElementById('statUpdated').textContent = 'Mar 2026';
 }
+
+// Google Maps button handler using event delegation
+document.getElementById('leaderboard').addEventListener('click', function(e) {
+  const btn = e.target.closest('.gmaps-btn');
+  if (btn) {
+    e.stopPropagation();
+    const url = btn.getAttribute('data-url');
+    window.open(url, '_blank');
+    return;
+  }
+});
 
 // Filter buttons
 document.querySelectorAll('.filter-btn').forEach(btn => {
