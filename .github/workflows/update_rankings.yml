@@ -2,47 +2,42 @@ name: Auto Update Momo Rankings
 
 on:
   schedule:
-    - cron: '0 */6 * * *'  # Runs every 6 hours
-  workflow_dispatch:  # Allows manual trigger
+    # Runs every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub
 
 jobs:
-  update:
+  update-rankings:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install praw pandas openpyxl requests
+        run: pip install requests openpyxl
 
       - name: Run scraper
-        env:
-          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
         run: python nepal_momo_scraper_v3.py
 
-      - name: Update site HTML
+      - name: Update website with fresh data
         run: python update_site.py
 
-      - name: Deploy to Netlify
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=. --prod
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-      - name: Commit updated HTML
+      - name: Rename HTML to index.html
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add kathmandu_momo_rankings.html
-          git diff --staged --quiet || git commit -m "Auto-update momo rankings"
+          if [ -f kathmandu_momo_rankings.html ]; then
+            cp kathmandu_momo_rankings.html index.html
+          fi
+
+      - name: Commit and push updated site
+        run: |
+          git config --global user.name "momoranker"
+          git config --global user.email "action@github.com"
+          git add index.html kathmandu_momo_rankings.html nepal_momo_expert_leaderboard.xlsx
+          git diff --staged --quiet || git commit -m "Auto-update rankings $(date '+%Y-%m-%d %H:%M')"
           git push
